@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Steph's GradientObject :)</title>
+    <style type="text/css" media="screen">
+        *{  
+            margin: 0;
+            padding: 0; }
+        #gradient {
+            position: relative;
+            margin: 15% auto;
+            width: 400px;
+            height: 400px;
+        }
+        #gradient div {
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <div id="gradient"></div>
+    
+    <script type="text/javascript" charset="utf-8">
+        
+        function Gradient (container, range) {
+            var divSide         = element.clientHeight;
+            var stopVals        = new Array ();
+
+            for ( var i=0; i<range.length; i++ ) {
+                stopVals.push(range[i]);
+            }
+            
+            var numCircles      = Math.floor(divSide/2);
+            var numSections     = stopVals.length - 1;
+            var numCircPerSect  = (numSections === 0) ? numCircles : Math.floor(divSide/(2*numSections));
+
+            //if range is single value
+            if ( stopVals.length === 1 ){
+                drawCircles(stopVals,1);
+            }
+            //range of shade changes per section
+            for ( var i = 0; i < (stopVals.length - 1); i++ ){
+                var secRange        = [stopVals[i], stopVals[i+1]];
+                var stopValLength   = stopVals.length;
+                drawCircles(secRange,stopValLength);
+            } 
+
+            //insert childDivs for section
+            function drawCircles (innerRange, stopValLength){
+                console.log("gradient range: "+ innerRange);
+                var outerShade  = innerRange[0];
+                var incr        = 0;
+
+                //determine increment of colour change between rings
+                if ( innerRange.length === 1 || outerShade === innerRange[1] ){
+                    incr = 0;
+                } else {
+                    var innerShade  = innerRange[1];
+                    var noShades    = Math.abs(outerShade - innerShade);
+
+                    if ( innerRange.length > 1 && stopValLength === 2 && outerShade < innerShade ){
+                        incr = (Math.floor(noShades/numCircPerSect) === 0) ? 1 : Math.floor(noShades/numCircPerSect);
+                    } 
+                    else if ( innerRange.length > 1 && stopValLength === 2 && outerShade > innerShade ){
+                        incr = (Math.floor(noShades/numCircPerSect) === 0) ? 1 : -Math.floor(noShades/numCircPerSect);
+                    }
+                    else if ( innerRange.length > 1 && stopValLength > 2 && outerShade < innerShade ){
+                        incr = (Math.floor(noShades/numCircPerSect) === 0) ? 1 : Math.ceil(noShades/numCircPerSect);
+                    } 
+                    else if ( innerRange.length > 1 && stopValLength > 2 && outerShade > innerShade){
+                        incr = (Math.floor(noShades/numCircPerSect) === 0) ? 1 : -Math.ceil(noShades/numCircPerSect);
+                    }
+                }
+
+                //insert rings
+                for ( j = 0; j < numCircPerSect; j++ ){ 
+                    divSide -= 2;
+
+                    //set circle colour & div properties
+                    outerShade += incr;
+                    var R = outerShade,
+                        G = outerShade,
+                        B = outerShade;
+                    var circleColour = "2px solid RGB(" + R + "," + G + "," + B + ")";
+
+                    var circleDiv                   = element.appendChild(document.createElement("div"));
+                    circleDiv.style.border          = circleColour;
+                    circleDiv.style.borderRadius    = "100%";
+                    circleDiv.style.height          = (divSide-2) + "px"; 
+                    circleDiv.style.width           = (divSide-2) + "px";
+                    circleDiv.style.marginLeft      = "-"+divSide/2+"px";
+                    circleDiv.style.left            = "50%";
+                    circleDiv.style.marginBottom    = "-"+divSide/2+"px";
+                    circleDiv.style.bottom          = "50%"; 
+                }   
+            }
+             
+            //methods        
+            this.draw = function() {
+                this.clear();
+                Gradient(element, range);
+                //reset stopVals                
+                stopVals = [];
+                for( var i=0; i<range.length; i++ ) {
+                    stopVals.push(range[i]);
+                }   
+                console.log(stopVals);
+            }
+            this.clear = function() {
+                element.innerHTML = ""; 
+            }
+            this.pop = function() {
+                stopVals.pop();
+                console.log(stopVals);
+                Gradient(element,stopVals);
+            }
+            this.push = function() {
+                for ( var i=0; i<arguments.length; i++ ) {
+                    stopVals.push(arguments[i]);
+                } 
+                console.log(stopVals);
+                Gradient(element,stopVals);
+            }
+            this.shift = function() {
+                stopVals.shift();
+                console.log(stopVals);
+                this.clear();
+                Gradient(element,stopVals);
+            } 
+            this.unshift = function() {
+                for ( var i=0; i<arguments.length; i++ ){
+                    stopVals.unshift(arguments[i]);
+                }
+                console.log(stopVals);
+                this.clear();
+                Gradient(element,stopVals);
+            }
+            this.reverse = function() {
+                var reverseStopVals = new Array();
+                for ( var i=stopVals.length-1; i>=0; i-- ){
+                    reverseStopVals.push(stopVals[i]);
+                }
+                //update stopVals
+                stopVals = reverseStopVals;
+                console.log(stopVals);
+                this.clear();
+                Gradient(element,stopVals);
+            }
+            this.map = function(callback) { 
+                var newStopVals = new Array();
+                for ( var i=0; i<stopVals.length; i++ ){
+                    stopVals[i] = ( (callback(stopVals[i])>255) || (callback(stopVals[i])<0) ) ? stopVals[i] : callback(stopVals[i]);
+                }
+                console.log(stopVals);
+                this.clear();
+                Gradient(element,stopVals);
+            }
+            this.sort = function(callback){
+                if(callback){
+                    for ( var i=0; i<stopVals.length; i++ ){
+                        stopVals[i] = ( (callback(stopVals[i])>255) || (callback(stopVals[i])<0) ) ? stopVals[i] : callback(stopVals[i]);
+                    }    
+                } 
+                stopVals = stopVals.sort();
+                console.log(stopVals);
+                Gradient(element, stopVals);
+            }
+        }
+
+        var element = document.getElementById("gradient");
+        var gradient = new Gradient(element,[0,255]);
+
+    </script>
+</body>
+</html>
+
